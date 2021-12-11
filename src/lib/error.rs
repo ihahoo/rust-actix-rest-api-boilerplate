@@ -74,3 +74,17 @@ pub fn render_500<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerRes
     });
     Ok(ErrorHandlerResponse::Response(new_res))
 }
+
+pub fn render_400<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
+    res.response_mut().headers_mut().insert(
+        http::header::CONTENT_TYPE,
+        http::HeaderValue::from_static("application/json"),
+    );
+
+    let new_res = res.map_body(|_, _| {
+        dev::ResponseBody::Other(dev::Body::Message(Box::new(
+            "{\"errcode\": 400, \"errmsg\": \"Bad Request\"}",
+        )))
+    });
+    Ok(ErrorHandlerResponse::Response(new_res))
+}
