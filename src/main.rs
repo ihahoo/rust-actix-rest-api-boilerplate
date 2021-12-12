@@ -2,6 +2,12 @@ pub mod api;
 pub mod lib;
 mod routes;
 
+#[macro_use]
+extern crate slog;
+extern crate slog_term;
+extern crate slog_async;
+extern crate slog_json;
+
 use actix_cors::Cors;
 use actix_web::middleware::errhandlers::{ErrorHandlers};
 use actix_web::{http, web, App, HttpServer, Result, HttpResponse};
@@ -11,6 +17,7 @@ use routes::hello;
 #[derive(Clone)]
 pub struct AppState {
     pub config: config::Config,
+    pub log: slog::Logger,
 }
 
 async fn index() -> Result<web::HttpResponse, error::Error> {
@@ -23,14 +30,18 @@ async fn main() -> std::io::Result<()> {
     settings.merge(config::File::with_name("data/config/app.toml")).unwrap();
     let port = settings.get::<String>("app.port").unwrap();
 
+    let logger = lib::log::get_logger();
+    info!(logger, "==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
+
     HttpServer::new(move || {
         let cors = Cors::permissive();
 
-        println!("==> 🚀 {} listening at {}", "app", settings.get::<String>("app.port").unwrap());
+        println!("==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
 
         App::new()
             .data(AppState {
                 config: settings.clone(),
+                log: logger.clone(),
             })
             .wrap(
                 ErrorHandlers::new()
