@@ -16,3 +16,5 @@ slog-term = "2.8.0"
 slog-async = "2.7.0"
 slog-json = "2.4.0"
 chrono = "0.4"
+sqlx = { version = "0.4", features = ["runtime-actix-native-tls", "uuid", "postgres", "chrono", "json"] }
+uuid = { version = "0.8", features = ["v4", "serde"] }

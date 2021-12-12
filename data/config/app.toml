@@ -1,3 +1,13 @@
 [app]
 name = "App"
 port = 8080
+
+[pg]
+user = "user"
+password = "password"
+host = "localhost"
+port = 5432
+dbname = "dbname"
+connect_timeout = 60
+idle_timeout = 5
+max = 1000

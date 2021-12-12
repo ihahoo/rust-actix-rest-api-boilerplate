@@ -18,6 +18,7 @@ use routes::hello;
 pub struct AppState {
     pub config: config::Config,
     pub log: slog::Logger,
+    pub db: sqlx::Pool<sqlx::Postgres>,
 }
 
 async fn index() -> Result<web::HttpResponse, error::Error> {
@@ -26,12 +27,17 @@ async fn index() -> Result<web::HttpResponse, error::Error> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // config
     let mut settings = config::Config::default();
     settings.merge(config::File::with_name("data/config/app.toml")).unwrap();
     let port = settings.get::<String>("app.port").unwrap();
 
+    // log
     let logger = lib::log::get_logger();
     info!(logger, "==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
+
+    // database
+    let pool = lib::db::pg::conn(&settings).await;
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -42,6 +48,7 @@ async fn main() -> std::io::Result<()> {
             .data(AppState {
                 config: settings.clone(),
                 log: logger.clone(),
+                db: pool.clone(),
             })
             .wrap(
                 ErrorHandlers::new()
