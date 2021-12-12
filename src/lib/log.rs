@@ -21,20 +21,22 @@ pub fn get_logger() -> Logger {
         .build()
         .fuse();
 
-    let drain = std::sync::Mutex::new(slog::Duplicate::new(drain1, drain2)).fuse();
-    let drain = slog_async::Async::new(drain).build().fuse();
+    let drain = slog_async::Async::new(slog::Duplicate::new(drain1, drain2).fuse()).build().fuse();
   
     let logger = slog::Logger::root(
         drain,
         o!(
-            "msg" => slog::PushFnValue(move |record : &slog::Record, ser| {
+            "msg" => slog::PushFnValue(move |record, ser| {
                 ser.emit(record.msg())
             }),
             "time" => slog::PushFnValue(move |_ : &slog::Record, ser| {
                 ser.emit(chrono::Utc::now().to_rfc3339())
             }),
-            "level" => slog::FnValue(move |rinfo : &slog::Record| {
-                rinfo.level().as_str()
+            "level" => slog::FnValue(move |record| {
+                record.level().as_str()
+            }),
+            "file" => slog::FnValue(move |record| {
+                format!("{}:{}", record.file(), record.line())
             }),
         ),
     );
