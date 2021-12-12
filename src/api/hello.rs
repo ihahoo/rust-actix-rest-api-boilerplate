@@ -1,5 +1,6 @@
-use actix_web::{get, HttpResponse, Responder};
+use actix_web::{web, get, HttpResponse, Responder};
 use serde::{Serialize};
+use crate::AppState;
 
 #[derive(Serialize)]
 struct Hello {
@@ -7,6 +8,8 @@ struct Hello {
 }
 
 #[get("/hello")]
-pub async fn hello() -> impl Responder {
-    HttpResponse::Ok().json(Hello {msg: String::from("hello world!")})
+pub async fn hello(state: web::Data<AppState>) -> impl Responder {
+    let name = state.config.get::<String>("app.name").unwrap();
+    info!(state.log, "hello {}", name);
+    HttpResponse::Ok().json(Hello {msg: format!("hello {}", name)})
 }
