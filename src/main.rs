@@ -9,7 +9,7 @@ extern crate slog_async;
 extern crate slog_json;
 
 use actix_cors::Cors;
-use actix_web::middleware::errhandlers::{ErrorHandlers};
+use actix_web::middleware::ErrorHandlers;
 use actix_web::{http, web, App, HttpServer, Result, HttpResponse};
 use lib::error;
 use routes::hello;
@@ -45,11 +45,11 @@ async fn main() -> std::io::Result<()> {
         println!("==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
 
         App::new()
-            .data(AppState {
+            .app_data(web::Data::new(AppState {
                 config: settings.clone(),
                 log: logger.clone(),
                 db: pool.clone(),
-            })
+            }))
             .wrap(
                 ErrorHandlers::new()
                     .handler(http::StatusCode::METHOD_NOT_ALLOWED, error::render_405)
