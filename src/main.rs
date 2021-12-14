@@ -19,6 +19,7 @@ pub struct AppState {
     pub config: config::Config,
     pub log: slog::Logger,
     pub db: sqlx::Pool<sqlx::Postgres>,
+    pub redis: mobc::Pool<lib::redis::RedisConnectionManager>
 }
 
 async fn index() -> Result<web::HttpResponse, error::Error> {
@@ -37,7 +38,10 @@ async fn main() -> std::io::Result<()> {
     info!(logger, "==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
 
     // database
-    let pool = lib::db::pg::conn(&settings).await;
+    let db_pool = lib::db::pg::conn(&settings).await;
+
+    // redis
+    let redis_pool = lib::redis::conn(&settings).await;
 
     HttpServer::new(move || {
         let cors = Cors::permissive();
@@ -48,7 +52,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState {
                 config: settings.clone(),
                 log: logger.clone(),
-                db: pool.clone(),
+                db: db_pool.clone(),
+                redis: redis_pool.clone(),
             }))
             .wrap(
                 ErrorHandlers::new()
