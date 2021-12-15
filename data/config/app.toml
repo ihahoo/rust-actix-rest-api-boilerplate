@@ -3,11 +3,11 @@ name = "App"
 port = 8080
 
 [pg]
-user = "user"
-password = "password"
-host = "localhost"
+user = "postgres"
+password = "Q2eywi5dpX1nciNj906faYHGXoWUhR1R"
+host = "127.0.0.1"
 port = 5432
-dbname = "dbname"
+dbname = "postgres"
 connect_timeout = 60
 idle_timeout = 5
 max = 1000
@@ -15,7 +15,7 @@ max = 1000
 [redis]
 host = "127.0.0.1"
 port = 6379
-password = "password"
+password = "CCq2Si39hdgY6ajP5vHL"
 db = 0
 pool_get_timeout_seconds = 10
 pool_max_open = 100

@@ -1,0 +1,21 @@
+version: '3'
+services:
+  db:
+    image: postgres:14-alpine
+    container_name: postgres
+    volumes:
+      - ./data/postgresql:/var/lib/postgresql/data/pgdata
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: Q2eywi5dpX1nciNj906faYHGXoWUhR1R
+      PGDATA: /var/lib/postgresql/data/pgdata
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    volumes:
+      - ./data/config/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./data/redis:/data
+    ports:
+      - 6379:6379
+    command: redis-server /usr/local/etc/redis/redis.conf

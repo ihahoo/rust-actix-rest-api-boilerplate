@@ -2,3 +2,5 @@
 Cargo.lock
 **/*.rs.bk
 data/logs
+data/redis
+data/postgresql
