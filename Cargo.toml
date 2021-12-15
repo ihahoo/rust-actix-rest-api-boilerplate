@@ -21,3 +21,4 @@ sqlx = { version = "0.5", features = ["runtime-actix-native-tls", "uuid", "postg
 uuid = { version = "0.8", features = ["v4", "serde"] }
 redis = { version = "0.21", features = ["tokio-comp"] }
 mobc = "0.7"
+regex = "1"

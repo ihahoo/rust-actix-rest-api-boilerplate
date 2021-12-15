@@ -26,6 +26,14 @@ impl ResponseError for Error {
     }
 }
 
+pub fn new(errcode: u32, errmsg: &str, status: u16) -> Error {
+    Error {
+        errmsg: errmsg.to_string(),
+        errcode,
+        status,
+    }
+}
+
 pub fn res(errcode: u32, errmsg: &str, status: u16) -> Result<web::HttpResponse, Error> {
     Err(Error {
         errmsg: errmsg.to_string(),
