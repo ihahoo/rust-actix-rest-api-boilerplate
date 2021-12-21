@@ -4,7 +4,7 @@ use actix_web::middleware::ErrorHandlerResponse;
 use serde::Serialize;
 use serde_json::{json, to_string_pretty};
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use actix_http::body::BoxBody;
+use actix_http::body::{EitherBody, BoxBody};
 
 #[derive(Debug, Serialize)]
 pub struct Error {
@@ -49,7 +49,7 @@ pub fn render_404<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerRes
     );
 
     let new_res = res.map_body(|_, _| {
-        BoxBody::new("{\"errcode\": 404, \"errmsg\": \"Not Found\"}")
+        EitherBody::left(BoxBody::new("{\"errcode\": 404, \"errmsg\": \"Not Found\"}"))
     });
     Ok(ErrorHandlerResponse::Response(new_res))
 }
@@ -61,7 +61,7 @@ pub fn render_405<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerRes
     );
 
     let new_res = res.map_body(|_, _| {
-        BoxBody::new("{\"errcode\": 405, \"errmsg\": \"Method Not Allowed\"}")
+        EitherBody::left(BoxBody::new("{\"errcode\": 405, \"errmsg\": \"Method Not Allowed\"}"))
     });
     Ok(ErrorHandlerResponse::Response(new_res))
 }
@@ -73,7 +73,7 @@ pub fn render_500<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerRes
     );
 
     let new_res = res.map_body(|_, _| {
-        BoxBody::new("{\"errcode\": 500, \"errmsg\": \"Internal Server Error\"}")
+        EitherBody::left(BoxBody::new("{\"errcode\": 500, \"errmsg\": \"Internal Server Error\"}"))
     });
     Ok(ErrorHandlerResponse::Response(new_res))
 }
@@ -85,7 +85,7 @@ pub fn render_400<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerRes
     );
 
     let new_res = res.map_body(|_, _| {
-        BoxBody::new("{\"errcode\": 400, \"errmsg\": \"Bad Request\"}")
+        EitherBody::left(BoxBody::new("{\"errcode\": 400, \"errmsg\": \"Bad Request\"}"))
     });
     Ok(ErrorHandlerResponse::Response(new_res))
 }
