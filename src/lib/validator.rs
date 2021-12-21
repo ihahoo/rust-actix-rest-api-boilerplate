@@ -9,7 +9,7 @@ pub fn not_none<T>(v: Option<T>, name: &str) -> Result<(), error::Error> {
     Ok(())
 }
 
-pub fn required_str(v: Option<String>, name: &str) -> Result<String, error::Error> {
+pub fn required_str(v: &Option<String>, name: &str) -> Result<String, error::Error> {
     not_none(v.as_ref(), name)?;
 
     let v = v.as_ref().unwrap().to_string();
