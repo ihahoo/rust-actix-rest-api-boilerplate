@@ -42,6 +42,14 @@ pub fn res(errcode: u32, errmsg: &str, status: u16) -> Result<web::HttpResponse,
     })
 }
 
+pub fn err500() -> Error {
+    Error {
+        errmsg: "Internal Server Error".to_string(),
+        errcode: 500,
+        status: 500,
+    }
+}
+
 pub fn render_404<B>(mut res: dev::ServiceResponse<B>) -> Result<ErrorHandlerResponse<BoxBody>> {
     res.response_mut().headers_mut().insert(
         http::header::CONTENT_TYPE,
