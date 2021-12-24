@@ -22,3 +22,12 @@ uuid = { version = "0.8", features = ["v4", "serde"] }
 redis = { version = "0.21", features = ["tokio-comp"] }
 mobc = "0.7"
 regex = "1"
+futures = "0.3"
+md5 = "0.7"
+sha2 = "0.10"
+jsonwebtoken = "7"
+aes = "0.7"
+block-modes = "0.8"
+base64 = "0.13"
+rand = "0.8"
+bytebuffer = "0.2"

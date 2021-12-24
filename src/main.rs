@@ -12,7 +12,7 @@ use actix_cors::Cors;
 use actix_web::middleware::ErrorHandlers;
 use actix_web::{http, web, App, HttpServer, Result, HttpResponse};
 use lib::error;
-use routes::hello;
+use routes::{hello, authorizations, user};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -64,6 +64,8 @@ async fn main() -> std::io::Result<()> {
             )
             .wrap(cors)
             .configure(hello::route)
+            .configure(authorizations::route)
+            .configure(user::route)
             .service(web::resource("/").route(web::get().to(index)))
     })
     .bind(format!("0.0.0.0:{}", port))?

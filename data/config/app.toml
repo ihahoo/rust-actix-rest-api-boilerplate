@@ -21,3 +21,7 @@ pool_get_timeout_seconds = 10
 pool_max_open = 100
 pool_max_idle = 8
 pool_max_lifetime_seconds = 60
+
+[auth]
+access_token_expire = 7200
+refresh_token_expire = 604800
