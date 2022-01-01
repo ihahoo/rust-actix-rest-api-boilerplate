@@ -24,6 +24,7 @@ $ cargo make dev
 
 默认启用8080端口，可通过 http://localhost:8080/hello 测试是否启动成功
 
+注：如果没有数据库和redis环境，可将 `main.rs` 中 `db_pool` 和 `redis_pool` 的相关部分注释掉
 
 ## 清理
 ```
@@ -55,6 +56,10 @@ $ docker-compose down
 ## 说明
 
 简洁为主
+
+### 用户和鉴权表数据库脚本(postgres)
+
+将 `sql/db.sql` 导入数据库
 
 ### 关于web框架actix-web
 
