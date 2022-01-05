@@ -185,17 +185,17 @@ pub async fn verify(permission: &str, req: &HttpRequest, state: &web::Data<AppSt
     };
 
     let mut scopes: Vec<String> = Vec::new();
-    if permission.len() > 0 {
-        let mut have_permission = false;
-        for v in claims.scopes {
-            if v == permission {
-                have_permission = true;
-            }
-            scopes.push(v);
+    let mut have_permission = false;
+    for v in claims.scopes {
+        if permission.len() > 0 && v == permission {
+            have_permission = true;
         }
-        if !have_permission {
-            return Err(error::new(100404, "No permission", 403));
-        }
+
+        scopes.push(v);
+    }
+
+    if permission.len() > 0 && !have_permission {
+        return Err(error::new(100404, "No permission", 403));
     }
 
     match authorizations::service::is_in_black_list(&claims.jti, &state).await {
