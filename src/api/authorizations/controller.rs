@@ -218,6 +218,11 @@ pub async fn refresh_auth(req: HttpRequest, state: web::Data<AppState>, conn: Co
         Some(v) => v,
     };
 
+    let create_time = match auth_data.create_time {
+        None => return Err(error::new(100403, "Authentication failure", 401)),
+        Some(v) => v,
+    };
+
     let refresh_token_jti = uuid::Uuid::new_v4();
     let update_time = Utc::now();
 
@@ -256,7 +261,7 @@ pub async fn refresh_auth(req: HttpRequest, state: web::Data<AppState>, conn: Co
         access_token: access_token.token,
         expires_in: access_token.expire,
         refresh_token: refresh_token.token,
-        created_at: format!("{:?}", access_token.create_time),
+        created_at: format!("{:?}", create_time),
         updated_at: format!("{:?}", update_time),
     }))
 }
