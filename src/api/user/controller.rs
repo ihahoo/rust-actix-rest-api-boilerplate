@@ -1,6 +1,6 @@
 use actix_web::{web, put, get, HttpResponse, HttpRequest};
 use actix_web::dev::ConnectionInfo;
-use serde::{Deserialize};
+use serde::Deserialize;
 use crate::AppState;
 use crate::lib::{error, validator, client, auth};
 use crate::api::user::{service, User};
@@ -8,7 +8,7 @@ use crate::api::authorizations;
 use chrono::prelude::*;
 
 #[get("/user")]
-pub async fn get_info(req: HttpRequest, state: web::Data<AppState>) -> Result<web::HttpResponse, error::Error> {
+pub async fn get_info(req: HttpRequest, state: web::Data<AppState>) -> Result<HttpResponse, error::Error> {
     let auth_info = auth::verify("ROLE_MEMBER", &req, &state).await?;
 
     let user_data = match service::get_user_info_by_id(auth_info.id, &state).await? {
@@ -27,7 +27,7 @@ pub struct ChangePasswordReqJson {
 }
 
 #[put("/user/password")]
-pub async fn change_password(req_info: web::Json<ChangePasswordReqJson>, req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<web::HttpResponse, error::Error> {
+pub async fn change_password(req_info: web::Json<ChangePasswordReqJson>, req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<HttpResponse, error::Error> {
     let auth_info = auth::verify("ROLE_MEMBER", &req, &state).await?;
 
     let old_password = validator::required_str(&req_info.old_password, "原密码")?;
