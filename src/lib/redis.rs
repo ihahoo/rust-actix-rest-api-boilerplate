@@ -1,7 +1,7 @@
 use mobc::Pool;
 use mobc::async_trait;
 use mobc::Manager;
-use redis::aio::Connection;
+use redis::aio::MultiplexedConnection;
 use redis::Client;
 use std::time::Duration;
 use super::error;
@@ -18,16 +18,16 @@ impl RedisConnectionManager {
 
 #[async_trait]
 impl Manager for RedisConnectionManager {
-    type Connection = Connection;
+    type Connection = MultiplexedConnection;
     type Error = redis::RedisError;
 
     async fn connect(&self) -> Result<Self::Connection, Self::Error> {
-        let c = self.client.get_async_connection().await?;
+        let c = self.client.get_multiplexed_async_connection().await?;
         Ok(c)
     }
 
     async fn check(&self, mut conn: Self::Connection) -> Result<Self::Connection, Self::Error> {
-        redis::cmd("PING").query_async(&mut conn).await?;
+        let _: () = redis::cmd("PING").query_async(&mut conn).await?;
         Ok(conn)
     }
 }
@@ -57,7 +57,11 @@ pub async fn conn(settings: &config::Config) -> Pool<RedisConnectionManager> {
 // 设置过期时间（秒）
 pub async fn expire(key: String, value: i64, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("EXPIRE").arg(key).arg(value).query_async::<_, i16>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("EXPIRE")
+        .arg(key)
+        .arg(value)
+        .query_async::<i16>(&mut con as &mut redis::aio::MultiplexedConnection)
+        .await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -69,7 +73,7 @@ pub async fn expire(key: String, value: i64, pool: &mobc::Pool<RedisConnectionMa
 // 获取某key的过期时间(秒)
 pub async fn get_expire(key: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<i64, error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("TTL").arg(key).query_async::<_, i64>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("TTL").arg(key).query_async::<i64>(&mut con as &mut MultiplexedConnection).await;
     match result {
         Ok(v) => Ok(v),
         Err(e) => {
@@ -81,7 +85,7 @@ pub async fn get_expire(key: String, pool: &mobc::Pool<RedisConnectionManager>, 
 
 pub async fn del(key: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("DEL").arg(key).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("DEL").arg(key).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -92,7 +96,7 @@ pub async fn del(key: String, pool: &mobc::Pool<RedisConnectionManager>, log: &s
 
 pub async fn has_key(key: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<bool, error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("EXISTS").arg(key).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("EXISTS").arg(key).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     match result {
         Ok(v) => {
             if v > 0 {
@@ -110,7 +114,7 @@ pub async fn has_key(key: String, pool: &mobc::Pool<RedisConnectionManager>, log
 
 pub async fn set<T: redis::ToRedisArgs>(key: String, value: T, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("SET").arg(key).arg(value).query_async::<_, String>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("SET").arg(key).arg(value).query_async::<String>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -121,7 +125,7 @@ pub async fn set<T: redis::ToRedisArgs>(key: String, value: T, pool: &mobc::Pool
 
 pub async fn set_with_expire<T: redis::ToRedisArgs>(key: String, value: T, time: i64, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("SET").arg(key).arg(value).arg("EX").arg(time).query_async::<_, String>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("SET").arg(key).arg(value).arg("EX").arg(time).query_async::<String>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -132,7 +136,7 @@ pub async fn set_with_expire<T: redis::ToRedisArgs>(key: String, value: T, time:
 
 pub async fn get<T: redis::FromRedisValue>(key: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<T, error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("GET").arg(key).query_async::<_, T>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("GET").arg(key).query_async::<T>(&mut con as &mut MultiplexedConnection).await;
     match result {
         Ok(v) => Ok(v),
         Err(e) => {
@@ -146,7 +150,7 @@ pub async fn get<T: redis::FromRedisValue>(key: String, pool: &mobc::Pool<RedisC
 
 pub async fn hset<T: redis::ToRedisArgs>(key: String, item: String, value: T, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("HSET").arg(key).arg(item).arg(value).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("HSET").arg(key).arg(item).arg(value).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -157,7 +161,7 @@ pub async fn hset<T: redis::ToRedisArgs>(key: String, item: String, value: T, po
 
 pub async fn hset_with_expire<T: redis::ToRedisArgs>(key: String, item: String, value: T, time: i64, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("HSET").arg(&key).arg(item).arg(value).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("HSET").arg(&key).arg(item).arg(value).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());
@@ -172,7 +176,7 @@ pub async fn hset_with_expire<T: redis::ToRedisArgs>(key: String, item: String, 
 
 pub async fn hget<T: redis::FromRedisValue>(key: String, item: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<T, error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("HGET").arg(key).arg(item).query_async::<_, T>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("HGET").arg(key).arg(item).query_async::<T>(&mut con as &mut MultiplexedConnection).await;
     match result {
         Ok(v) => Ok(v),
         Err(e) => {
@@ -184,7 +188,7 @@ pub async fn hget<T: redis::FromRedisValue>(key: String, item: String, pool: &mo
 
 pub async fn hhas_key(key: String, item: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<bool, error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("HEXISTS").arg(key).arg(item).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("HEXISTS").arg(key).arg(item).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     match result {
         Ok(v) => {
             if v > 0 {
@@ -202,7 +206,7 @@ pub async fn hhas_key(key: String, item: String, pool: &mobc::Pool<RedisConnecti
 
 pub async fn hdel(key: String, item: String, pool: &mobc::Pool<RedisConnectionManager>, log: &slog::Logger)  -> Result<(), error::Error> {
     let mut con = pool.get().await.unwrap();
-    let result = redis::cmd("HDEL").arg(key).arg(item).query_async::<_, i32>(&mut con as &mut redis::aio::Connection).await;
+    let result = redis::cmd("HDEL").arg(key).arg(item).query_async::<i32>(&mut con as &mut MultiplexedConnection).await;
     if let Err(err) = result {
         error!(log, "{}", err);
         return Err(error::err500());

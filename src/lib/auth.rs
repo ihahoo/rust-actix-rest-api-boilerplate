@@ -2,7 +2,7 @@ use sha2::{Sha256, Digest};
 use serde::{Serialize, Deserialize};
 use jsonwebtoken::{encode, decode, Header, Algorithm, Validation, EncodingKey, DecodingKey};
 use chrono::{Duration, Utc};
-use super::{aes};
+use super::aes;
 use chrono::prelude::*;
 use crate::api::authorizations;
 use actix_web::{web, HttpRequest};

@@ -25,7 +25,7 @@ struct ResTokenJson {
 
 // 创建授权
 #[post("/authorizations")]
-pub async fn create_auth(req_info: web::Json<CreateAuthReqJson>, state: web::Data<AppState>, req: HttpRequest, conn: ConnectionInfo) -> Result<web::HttpResponse, error::Error> {
+pub async fn create_auth(req_info: web::Json<CreateAuthReqJson>, state: web::Data<AppState>, req: HttpRequest, conn: ConnectionInfo) -> Result<HttpResponse, error::Error> {
     let username = validator::required_str(&req_info.username, "用户名")?;
     let password = validator::required_str(&req_info.password, "密码")?;
 
@@ -97,7 +97,7 @@ pub async fn create_auth(req_info: web::Json<CreateAuthReqJson>, state: web::Dat
 
 // 刷新授权
 #[put("/authorizations/{id}")]
-pub async fn refresh_auth(req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<web::HttpResponse, error::Error> {
+pub async fn refresh_auth(req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<HttpResponse, error::Error> {
     let id: String = req.match_info().get("id").unwrap().parse().unwrap();
     validator::uuid(&id, "授权id")?;
 
@@ -268,7 +268,7 @@ pub async fn refresh_auth(req: HttpRequest, state: web::Data<AppState>, conn: Co
 
 // 删除授权
 #[delete("/authorizations/{id}")]
-pub async fn delete_auth(req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<web::HttpResponse, error::Error> {
+pub async fn delete_auth(req: HttpRequest, state: web::Data<AppState>, conn: ConnectionInfo) -> Result<HttpResponse, error::Error> {
     let id: String = req.match_info().get("id").unwrap().parse().unwrap();
     validator::uuid(&id, "授权id")?;
 

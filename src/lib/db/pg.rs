@@ -14,7 +14,7 @@ pub async fn conn(settings: &config::Config) -> sqlx::Pool<sqlx::Postgres> {
     let pool = PgPoolOptions::new()
         .max_connections(max)
         .idle_timeout(Duration::new(idle_timeout, 0))
-        .connect_timeout(Duration::new(connect_timeout, 0))
+        .acquire_timeout(Duration::new(connect_timeout, 0))
         .connect(&format!("postgres://{}:{}@{}:{}/{}", user, password, host, port, dbname)[..])
         .await
         .unwrap();

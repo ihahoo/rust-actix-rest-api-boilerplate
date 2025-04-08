@@ -1,33 +1,30 @@
 [package]
 name = "rust-actix-rest-api-boilerplate"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-actix-web = "4.0.0-beta.15"
-actix-cors = "0.6.0-beta.6"
-actix-http = "3.0.0-beta.15"
+actix-web = "4.10.2"
+actix-cors = "0.7.1"
+actix-http = "3.10.0"
 serde = {version = "1", features = ["derive"] }
 serde_json = "1"
-config = "0.11"
+config = "0.15"
 slog = "2.7.0"
-slog-term = "2.8.0"
-slog-async = "2.7.0"
-slog-json = "2.4.0"
+slog-term = "2.9.1"
+slog-async = "2.8.0"
+slog-json = "2.6.1"
 chrono = { version = "0.4", features = ["serde"] }
-sqlx = { version = "0.5", features = ["runtime-actix-native-tls", "uuid", "postgres", "chrono", "json"] }
-uuid = { version = "0.8", features = ["v4", "serde"] }
-redis = { version = "0.21", features = ["tokio-comp"] }
-mobc = "0.7"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "uuid", "postgres", "chrono", "json"] }
+uuid = { version = "1.16.0", features = ["v4", "serde"] }
+redis = { version = "0.29.5", features = ["tokio-comp"] }
+mobc = "0.8"
 regex = "1"
 futures = "0.3"
 md5 = "0.7"
 sha2 = "0.10"
-jsonwebtoken = "7"
-aes = "0.7"
-block-modes = "0.8"
-base64 = "0.13"
-rand = "0.8"
-bytebuffer = "0.2"
+jsonwebtoken = "9"
+aes-gcm = "0.10.2"
+base64 = "0.22"
+rand = "0.9"
+bytebuffer = "2.3.0"

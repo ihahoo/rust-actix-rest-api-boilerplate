@@ -11,7 +11,8 @@ pub fn get_client_info(state: &web::Data<AppState>, req: &HttpRequest, conn: &Co
     let mut ip = String::from("");
     let mut user_agent = String::from("");
 
-    let is_behind_proxy = state.config.get::<bool>("app.behind_proxy").unwrap();
+    
+    let is_behind_proxy = state.config.get::<bool>("app.behind_proxy").unwrap_or(false);
     if is_behind_proxy {
         if let Some(val) = conn.realip_remote_addr() {
             let split = val.split(":");

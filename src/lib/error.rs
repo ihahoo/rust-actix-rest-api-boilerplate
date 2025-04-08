@@ -1,5 +1,5 @@
 use actix_web::http::StatusCode;
-use actix_web::{web, ResponseError, dev, Result, http};
+use actix_web::{ResponseError, dev, Result, http, HttpResponse};
 use actix_web::middleware::ErrorHandlerResponse;
 use serde::Serialize;
 use serde_json::{json, to_string_pretty};
@@ -20,9 +20,9 @@ impl Display for Error {
 }
 
 impl ResponseError for Error {
-    fn error_response(&self) -> web::HttpResponse {
+    fn error_response(&self) -> HttpResponse {
         let err_json = json!({ "errcode": self.errcode, "errmsg": self.errmsg });
-        web::HttpResponse::build(StatusCode::from_u16(self.status).unwrap()).json(err_json)
+        HttpResponse::build(StatusCode::from_u16(self.status).unwrap()).json(err_json)
     }
 }
 
@@ -34,7 +34,7 @@ pub fn new(errcode: u32, errmsg: &str, status: u16) -> Error {
     }
 }
 
-pub fn res(errcode: u32, errmsg: &str, status: u16) -> Result<web::HttpResponse, Error> {
+pub fn res(errcode: u32, errmsg: &str, status: u16) -> Result<HttpResponse, Error> {
     Err(Error {
         errmsg: errmsg.to_string(),
         errcode,

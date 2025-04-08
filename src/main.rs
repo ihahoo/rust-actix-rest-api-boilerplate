@@ -1,3 +1,4 @@
+#![allow(special_module_name)]
 pub mod api;
 pub mod lib;
 mod routes;
@@ -22,15 +23,17 @@ pub struct AppState {
     pub redis: mobc::Pool<lib::redis::RedisConnectionManager>
 }
 
-async fn index() -> Result<web::HttpResponse, error::Error> {
+async fn index() -> Result<HttpResponse, error::Error> {
     Ok(HttpResponse::Ok().body(""))
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // config
-    let mut settings = config::Config::default();
-    settings.merge(config::File::with_name("data/config/app.toml")).unwrap();
+    let settings = config::Config::builder()
+        .add_source(config::File::with_name("data/config/app.toml"))
+        .build()
+        .unwrap();
     let port = settings.get::<String>("app.port").unwrap();
 
     // log

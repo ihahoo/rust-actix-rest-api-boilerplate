@@ -1,49 +1,61 @@
-use aes::Aes128;
-use block_modes::{BlockMode, Cbc};
-use block_modes::block_padding::Pkcs7;
-use rand::seq::SliceRandom;
-
-type Aes128Cbc = Cbc<Aes128, Pkcs7>;
+use aes_gcm::{
+    aead::{Aead, KeyInit},
+    Aes128Gcm,
+    Nonce,
+};
+use rand::Rng;
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 const BASE_STR: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 fn gen_string(size: usize) -> String {
-    let mut rng = &mut rand::thread_rng();
-    String::from_utf8(
-        BASE_STR.as_bytes()
-            .choose_multiple(&mut rng, size)
-            .cloned()
-            .collect()
-    ).unwrap()
+    let mut rng = rand::rng();
+    (0..size)
+        .map(|_| {
+            let idx = rng.random_range(0..BASE_STR.len());
+            BASE_STR.chars().nth(idx).unwrap()
+        })
+        .collect()
 }
 
 pub fn encrypt(data: &str, key: &str) -> String {
-    let iv_str = gen_string(16);
-    let iv = iv_str.as_bytes();
-    let cipher = Aes128Cbc::new_from_slices(key.as_bytes(), iv).unwrap();
-    let ciphertext = cipher.encrypt_vec(data.as_bytes());
-    let mut buffer = bytebuffer::ByteBuffer::from_bytes(iv);
-    buffer.write_bytes(&ciphertext);
-    base64::encode(buffer.to_bytes())
+    // 确保密钥长度为16字节
+    let key_bytes = if key.len() >= 16 {
+        key.as_bytes()[0..16].to_vec()
+    } else {
+        let mut padded = key.as_bytes().to_vec();
+        padded.resize(16, 0);
+        padded
+    };
+
+    let cipher = Aes128Gcm::new_from_slice(&key_bytes).unwrap();
+    let nonce_str = gen_string(12);  // AES-GCM 使用12字节的 nonce
+    let nonce = Nonce::from_slice(nonce_str.as_bytes());
+    
+    let ciphertext = cipher.encrypt(nonce, data.as_bytes()).unwrap();
+    let mut result = nonce_str.as_bytes().to_vec();
+    result.extend_from_slice(&ciphertext);
+    STANDARD.encode(result)
 }
 
 pub fn decrypt(data: &str, key: &str) -> Option<String> {
-    let bytes = match base64::decode(data) {
-        Ok(v) => v,
-        Err(_) => return None
+    // 确保密钥长度为16字节
+    let key_bytes = if key.len() >= 16 {
+        key.as_bytes()[0..16].to_vec()
+    } else {
+        let mut padded = key.as_bytes().to_vec();
+        padded.resize(16, 0);
+        padded
     };
-    let cipher = match Aes128Cbc::new_from_slices(key.as_bytes(), &bytes[0..16]) {
-        Ok(v) => v,
-        Err(_) => return None,
-    };
-    let decrypt_byte = match cipher.decrypt_vec(&bytes[16..]) {
-        Ok(v) => v,
-        Err(_) => return None,
-    };
-    let decrypt_str = match String::from_utf8(decrypt_byte) {
-        Ok(v) => v,
-        Err(_) => return None,
-    };
+
+    let bytes = STANDARD.decode(data).ok()?;
+    if bytes.len() <= 12 {
+        return None;
+    }
+
+    let cipher = Aes128Gcm::new_from_slice(&key_bytes).ok()?;
+    let nonce = Nonce::from_slice(&bytes[0..12]);
     
-    Some(decrypt_str)
+    let plaintext = cipher.decrypt(nonce, &bytes[12..]).ok()?;
+    String::from_utf8(plaintext).ok()
 }
