@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.4.4, for Linux (aarch64)
 --
--- Host: localhost    Database: ys_center_mail
+-- Host: localhost    Database: your_db_name
 -- ------------------------------------------------------
 -- Server version	8.4.4
 
