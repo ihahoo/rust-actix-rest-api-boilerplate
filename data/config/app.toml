@@ -2,12 +2,12 @@
 name = "App"
 port = 8080
 
-[pg]
-user = "postgres"
-password = "Q2eywi5dpX1nciNj906faYHGXoWUhR1R"
+[mysql]
+user = "root"
+password = "sGaZoXfea1fdxSVZ4GsA"
 host = "127.0.0.1"
-port = 5432
-dbname = "postgres"
+port = 3306
+dbname = "ys_center_mail"
 connect_timeout = 60
 idle_timeout = 5
 max = 1000
@@ -15,7 +15,7 @@ max = 1000
 [redis]
 host = "127.0.0.1"
 port = 6379
-password = "CCq2Si39hdgY6ajP5vHL"
+password = "AcAuCh9k7nMMbOut"
 db = 0
 pool_get_timeout_seconds = 10
 pool_max_open = 100

@@ -22,10 +22,10 @@ pub async fn insert(user: &User, state: &web::Data<AppState>) -> Result<User, er
     Ok(result)
 }
 
-pub async fn update(user: &User, state: &web::Data<AppState>) -> Result<User, error::Error> {
-    let result = model::update(user, &state.db, &state.log).await?;
+pub async fn update(user: &User, state: &web::Data<AppState>) -> Result<(), error::Error> {
+    model::update(user, &state.db, &state.log).await?;
 
-    Ok(result)
+    Ok(())
 }
 
 pub async fn delete(id: i32, state: &web::Data<AppState>) -> Result<(), error::Error> {

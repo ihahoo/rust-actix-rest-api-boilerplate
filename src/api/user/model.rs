@@ -2,8 +2,8 @@ use chrono::prelude::*;
 use crate::lib::error;
 use super::{User, UserInfo};
 
-pub async fn get_by_id(id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<Option<User>, error::Error> {
-    let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id=$1")
+pub async fn get_by_id(id: i32, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<Option<User>, error::Error> {
+    let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id=?")
         .bind(id)
         .fetch_optional(db)
         .await;
@@ -17,8 +17,8 @@ pub async fn get_by_id(id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Log
     }
 }
 
-pub async fn get_by_username(username: &str, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<Option<User>, error::Error> {
-    let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE username=$1")
+pub async fn get_by_username(username: &str, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<Option<User>, error::Error> {
+    let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE username=?")
         .bind(username)
         .fetch_optional(db)
         .await;
@@ -32,111 +32,71 @@ pub async fn get_by_username(username: &str, db: &sqlx::Pool<sqlx::Postgres>, lo
     }
 }
 
-pub async fn insert(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<User, error::Error> {
-    let mut sql1 = vec![String::from("uuid")];
-    let mut sql2 = vec![String::from("$1")];
-    let mut sql_index = 2;
-
-    if let Some(_) = &user.username {
-        sql1.push(String::from("username"));
-        sql2.push(format!("${}", sql_index));
-        sql_index += 1;
-    }
-
-    if let Some(_) = &user.password {
-        sql1.push(String::from("password"));
-        sql2.push(format!("${}", sql_index));
-        sql_index += 1;
-    }
-
-    if let Some(_) = &user.salt {
-        sql1.push(String::from("salt"));
-        sql2.push(format!("${}", sql_index));
-        sql_index += 1;
-    }
-
-    if let Some(_) = &user.mobile {
-        sql1.push(String::from("mobile"));
-        sql2.push(format!("${}", sql_index));
-        sql_index += 1;
-    }
-
-    sql1.push(String::from("create_time"));
-    sql2.push(format!("${}", sql_index));
-    sql_index += 1;
-
-    if let Some(_) = &user.update_time {
-        sql1.push(String::from("update_time"));
-        sql2.push(format!("${}", sql_index));
-        sql_index += 1;
-    }
-
-    sql1.push(String::from("is_del"));
-    sql2.push(format!("${}", sql_index));
-    sql_index += 1;
-
-    sql1.push(String::from("is_enabled"));
-    sql2.push(format!("${}", sql_index));
-    sql_index += 1;
-
-    sql1.push(String::from("user_type"));
-    sql2.push(format!("${}", sql_index));
-
-    let sql = format!("INSERT INTO users ({}) VALUES ({}) RETURNING *", sql1.join(","), sql2.join(","));
+pub async fn insert(user: &User, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<User, error::Error> {
+    // 准备插入数据
+    let uuid = match &user.uuid {
+        Some(uuid) => uuid.clone(),
+        None => uuid::Uuid::new_v4().to_string(),
+    };
     
-    let mut q = sqlx::query_as::<_, User>(&sql);
-
-    if let Some(uuid) = &user.uuid {
-        q = q.bind(uuid);
-    } else {
-        q = q.bind(uuid::Uuid::new_v4());
+    let create_time = match &user.create_time {
+        Some(time) => *time,
+        None => Utc::now(),
+    };
+    
+    let is_enabled = match &user.is_enabled {
+        Some(val) => *val,
+        None => 1,
+    };
+    
+    let is_del = match &user.is_del {
+        Some(val) => *val,
+        None => 0,
+    };
+    
+    let user_type = match &user.user_type {
+        Some(val) => *val,
+        None => 0,
+    };
+    
+    // 执行插入操作
+    let r = sqlx::query(r#"
+        INSERT INTO users 
+        (uuid, username, password, salt, mobile, create_time, update_time, is_del, is_enabled, user_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#)
+        .bind(&uuid)
+        .bind(&user.username)
+        .bind(&user.password)
+        .bind(&user.salt)
+        .bind(&user.mobile)
+        .bind(create_time)
+        .bind(&user.update_time)
+        .bind(is_del)
+        .bind(is_enabled)
+        .bind(user_type)
+        .execute(db)
+        .await;
+    
+    if let Err(e) = r {
+        error!(log, "{}", e);
+        return Err(error::err500());
     }
-
-    if let Some(username) = &user.username {
-        q = q.bind(username);
+    
+    // 获取最后插入的ID
+    let last_id = sqlx::query_scalar::<_, i64>("SELECT LAST_INSERT_ID()")
+        .fetch_one(db)
+        .await;
+    
+    if let Err(e) = last_id {
+        error!(log, "{}", e);
+        return Err(error::err500());
     }
-
-    if let Some(password) = &user.password {
-        q = q.bind(password);
-    }
-
-    if let Some(salt) = &user.salt {
-        q = q.bind(salt);
-    }
-
-    if let Some(mobile) = &user.mobile {
-        q = q.bind(mobile);
-    }
-
-    if let Some(create_time) = &user.create_time {
-        q = q.bind(create_time);
-    } else {
-        q = q.bind(Utc::now());
-    }
-
-    if let Some(update_time) = &user.update_time {
-        q = q.bind(update_time);
-    }
-
-    if let Some(is_enabled) = &user.is_enabled {
-        q = q.bind(is_enabled);
-    } else {
-        q = q.bind(1);
-    }
-
-    if let Some(is_del) = &user.is_del {
-        q = q.bind(is_del);
-    } else {
-        q = q.bind(0);
-    }
-
-    if let Some(user_type) = &user.user_type {
-        q = q.bind(user_type);
-    } else {
-        q = q.bind(0);
-    }
-
-    let r = q.fetch_one(db).await;
+    
+    // 查询刚插入的记录
+    let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = ?")
+        .bind(last_id.unwrap())
+        .fetch_one(db)
+        .await;
     
     match r {
         Ok(v) => Ok(v),
@@ -147,7 +107,7 @@ pub async fn insert(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Lo
     }
 }
 
-pub async fn update(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<User, error::Error> {
+pub async fn update(user: &User, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<(), error::Error> {
     let id = match user.id {
         Some(v) => v,
         None => 0,
@@ -158,47 +118,49 @@ pub async fn update(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Lo
         return Err(error::err500());
     }
 
-    let mut sql1 = vec![format!("update_time = $1")];
-    let mut sql_index = 2;
+    let mut query = String::from("UPDATE users SET ");
+    let mut params: Vec<String> = Vec::new();
 
-    if let Some(_) = &user.username {
-        sql1.push(format!("username = ${}", sql_index));
-        sql_index += 1;
+    // 固定更新字段
+    params.push("update_time = ?".to_string());
+
+    // 可选更新字段
+    if user.username.is_some() {
+        params.push("username = ?".to_string());
     }
-    if let Some(_) = &user.password {
-        sql1.push(format!("password = ${}", sql_index));
-        sql_index += 1;
+    if user.password.is_some() {
+        params.push("password = ?".to_string());
     }
-    if let Some(_) = &user.salt {
-        sql1.push(format!("salt = ${}", sql_index));
-        sql_index += 1;
+    if user.salt.is_some() {
+        params.push("salt = ?".to_string());
     }
-    if let Some(_) = &user.mobile {
-        sql1.push(format!("mobile = ${}", sql_index));
-        sql_index += 1;
+    if user.mobile.is_some() {
+        params.push("mobile = ?".to_string());
     }
-    if let Some(_) = &user.is_enabled {
-        sql1.push(format!("is_enabled = ${}", sql_index));
-        sql_index += 1;
+    if user.is_enabled.is_some() {
+        params.push("is_enabled = ?".to_string());
     }
-    if let Some(_) = &user.last_login_time {
-        sql1.push(format!("last_login_time = ${}", sql_index));
-        sql_index += 1;
+    if user.last_login_time.is_some() {
+        params.push("last_login_time = ?".to_string());
     }
-    if let Some(_) = &user.last_login_ip {
-        sql1.push(format!("last_login_ip = ${}", sql_index));
-        sql_index += 1;
+    if user.last_login_ip.is_some() {
+        params.push("last_login_ip = ?".to_string());
     }
-    if let Some(_) = &user.user_type {
-        sql1.push(format!("user_type = ${}", sql_index));
-        sql_index += 1;
+    if user.user_type.is_some() {
+        params.push("user_type = ?".to_string());
     }
 
-    let sql = format!("UPDATE users SET {} WHERE id = ${} RETURNING *", sql1.join(","), sql_index);
+    if params.is_empty() {
+        return Ok(());
+    }
 
-    let mut q = sqlx::query_as::<_, User>(&sql);
+    query.push_str(&params.join(", "));
+    query.push_str(" WHERE id = ?");
 
-    q = q.bind(Utc::now());
+    // 按顺序绑定参数
+    let mut q = sqlx::query(&query)
+        .bind(Utc::now());  // 绑定 update_time
+
     if let Some(username) = &user.username {
         q = q.bind(username);
     }
@@ -225,19 +187,18 @@ pub async fn update(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Lo
     }
     q = q.bind(id);
 
-    let r = q.fetch_one(db).await;
+    let r = q.execute(db).await;
     
-    match r {
-        Ok(v) => Ok(v),
-        Err(e) => {
-            error!(log, "{}", e);
-            Err(error::err500())
-        }
+    if let Err(e) = r {
+        error!(log, "{}", e);
+        return Err(error::err500());
     }
+    
+    Ok(())
 }
 
-pub async fn update_last_login(login_time: DateTime<Utc>, ip: &str, user_id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<(), error::Error> {
-    let r = sqlx::query(r#"UPDATE users SET last_login_time=$1, last_login_ip=$2 WHERE id=$3"#)
+pub async fn update_last_login(login_time: DateTime<Utc>, ip: &str, user_id: i32, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<(), error::Error> {
+    let r = sqlx::query(r#"UPDATE users SET last_login_time=?, last_login_ip=? WHERE id=?"#)
         .bind(login_time)
         .bind(ip)
         .bind(user_id)
@@ -252,8 +213,8 @@ pub async fn update_last_login(login_time: DateTime<Utc>, ip: &str, user_id: i32
     Ok(())
 }
 
-pub async fn delete(id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<(), error::Error> {
-    let r = sqlx::query("UPDATE users SET is_del = 1 WHERE id=$1")
+pub async fn delete(id: i32, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<(), error::Error> {
+    let r = sqlx::query("UPDATE users SET is_del = 1 WHERE id=?")
         .bind(id)
         .execute(db)
         .await;
@@ -266,10 +227,10 @@ pub async fn delete(id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger
     Ok(())
 }
 
-pub async fn get_user_info_by_id(id: i32, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Logger) -> Result<Option<UserInfo>, error::Error> {
+pub async fn get_user_info_by_id(id: i32, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logger) -> Result<Option<UserInfo>, error::Error> {
     let r = sqlx::query_as::<_, UserInfo>(r#"
         SELECT id, username, uuid, mobile, last_login_time, last_login_ip, user_type FROM users
-        WHERE id = $1 AND is_del=0 AND is_enabled=1"#)
+        WHERE id = ? AND is_del=0 AND is_enabled=1"#)
         .bind(id)
         .fetch_optional(db)
         .await;

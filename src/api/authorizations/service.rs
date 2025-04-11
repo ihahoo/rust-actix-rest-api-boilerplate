@@ -45,15 +45,12 @@ pub async fn is_in_black_list(id: &String, state: &web::Data<AppState>) -> Resul
 
 // 创建授权
 pub async fn create_auth(authorization: &Authorization, client: &ClientInfo, state: &web::Data<AppState>) -> Result<i32, error::Error> {
-    let result = model::insert_auth(authorization, &state.db, &state.log).await?;
+    let auth_id = model::insert_auth(authorization, &state.db, &state.log).await?;
     if let Some(user_id) = authorization.user_id {
         user::service::update_last_login(Utc::now(), user_id, &client, &state).await?;
     }
-    if let Some(v) = result.id {
-        return Ok(v);
-    }
-
-    Ok(0)
+    
+    Ok(auth_id)
 }
 
 // 撤销授权
@@ -83,8 +80,6 @@ pub async fn get_by_uuid(uuid: &str, state: &web::Data<AppState>) -> Result<Opti
 }
 
 // 更新授权
-pub async fn update_auth(authorization: &Authorization, state: &web::Data<AppState>) -> Result<Authorization, error::Error> {
-    let result = model::update_auth(authorization, &state.db, &state.log).await?;
-
-    Ok(result)
+pub async fn update_auth(authorization: &Authorization, state: &web::Data<AppState>) -> Result<(), error::Error> {
+    model::update_auth(authorization, &state.db, &state.log).await
 }

@@ -2,4 +2,4 @@
 **/*.rs.bk
 data/logs
 data/redis
-data/postgresql
+data/mysql

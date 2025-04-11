@@ -14,14 +14,14 @@ use crate::api::authorizations::AuthorizationInfo;
 const AES_KEY: &str = "e3Ui2PBkyFl5vUaO";
 const JWT_KEY: &str = "TmeAdY8DIvUaJTkcMaVpJ8dUjIXN6qHosyGTULWhlVXfEvH6XKnDY1HzGVH64y00";
 
-pub fn salt() -> uuid::Uuid {
-    uuid::Uuid::new_v4()
+pub fn salt() -> String {
+    uuid::Uuid::new_v4().to_string()
 }
 
-pub fn crypt_password(password: &str, salt: &uuid::Uuid) -> String {
-    let pwd = format!("{}{}", password, salt.to_string());
+pub fn crypt_password(password: &str, salt: &str) -> String {
+    let pwd = format!("{}{}", password, salt);
     let pwd = md5::compute(pwd);
-    let pwd = format!("{:?}{}{}", pwd, password, salt.to_string());
+    let pwd = format!("{:?}{}{}", pwd, password, salt);
     let pwd = Sha256::new().chain_update(pwd).finalize();
     format!("{:x}", pwd)
 }
@@ -61,13 +61,13 @@ pub async fn create_auth(user_id: i32, user_type: i16, client: &ClientInfo, stat
     let authorization = authorizations::Authorization {
         id: None,
         user_id: Some(user_id),
-        uuid: Some(refresh_token_id),
+        uuid: Some(refresh_token_id.to_string()),
         client_type: Some(10),
-        refresh_token: Some(refresh_token_jti),
+        refresh_token: Some(refresh_token_jti.to_string()),
         create_time: Some(Utc::now()),
         update_time: None,
         last_refresh_time: None,
-        access_token_id: Some(access_token.jti),
+        access_token_id: Some(access_token.jti.to_string()),
         access_token_exp: Some(access_token.expire_time),
         access_token_iat: Some(access_token.create_time),
         is_enabled: Some(1),

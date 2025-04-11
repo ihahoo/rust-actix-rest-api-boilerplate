@@ -19,7 +19,7 @@ use routes::{hello, authorizations, user};
 pub struct AppState {
     pub config: config::Config,
     pub log: slog::Logger,
-    pub db: sqlx::Pool<sqlx::Postgres>,
+    pub db: sqlx::Pool<sqlx::MySql>,
     pub redis: mobc::Pool<lib::redis::RedisConnectionManager>
 }
 
@@ -41,7 +41,7 @@ async fn main() -> std::io::Result<()> {
     info!(logger, "==> 🚀 {} listening at {}", settings.get::<String>("app.name").unwrap(), settings.get::<String>("app.port").unwrap());
 
     // database
-    let db_pool = lib::db::pg::conn(&settings).await;
+    let db_pool = lib::db::mysql::conn(&settings).await;
 
     // redis
     let redis_pool = lib::redis::conn(&settings).await;

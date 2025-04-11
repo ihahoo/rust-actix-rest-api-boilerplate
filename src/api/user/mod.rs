@@ -1,16 +1,16 @@
 pub mod controller;
 pub mod model;
 pub mod service;
-use serde::{Serialize};
+use serde::Serialize;
 use chrono::prelude::*;
 
 #[derive(Debug, sqlx::FromRow)]
 pub struct User {
     pub id: Option<i32>,
-    pub uuid: Option<uuid::Uuid>,
+    pub uuid: Option<String>,
     pub username: Option<String>,
     pub password: Option<String>,
-    pub salt: Option<uuid::Uuid>,
+    pub salt: Option<String>,
     pub mobile: Option<String>,
     pub create_time: Option<DateTime<Utc>>,
     pub update_time: Option<DateTime<Utc>>,
@@ -45,7 +45,7 @@ impl User {
 pub struct UserInfo {
     pub id: i32,
     pub username: Option<String>,
-    pub uuid: uuid::Uuid,
+    pub uuid: String,
     pub mobile: Option<String>,
     pub last_login_time: Option<DateTime<Utc>>,
     pub last_login_ip: Option<String>,

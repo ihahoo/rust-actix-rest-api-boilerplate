@@ -46,7 +46,7 @@ $ cargo make buildlinux
 $ docker-compose up
 ````
 
-通过docker-compose启动postgres和redis，postgres端口为5432, redis端口为6379。数据库可通过本地客户端工具连接进行操作和调试。
+通过docker-compose启动mysql和redis，mysql端口为3306, redis端口为6379。数据库可通过本地客户端工具连接进行操作和调试。
 
 ## 停止本地开发环境数据库(Docker, 可选)
 ````
@@ -57,7 +57,7 @@ $ docker-compose down
 
 简洁为主
 
-### 用户和鉴权表数据库脚本(postgres)
+### 用户和鉴权表数据库脚本(mysql)
 
 将 `sql/db.sql` 导入数据库
 
@@ -103,7 +103,7 @@ pub async fn hello(state: web::Data<AppState>) -> Result<web::HttpResponse, erro
 
 ### 数据库
 
-数据库操作库选择的[sqlx](https://github.com/launchbadge/sqlx)，本例做了postgres的配置，可支持其他各种常用数据库。可通过`web::Data`获取数据库连接池。注意要使用异步方式开发。
+数据库操作库选择的[sqlx](https://github.com/launchbadge/sqlx)，本例做了mysql的配置，可支持其他各种常用数据库。可通过`web::Data`获取数据库连接池。注意要使用异步方式开发。
 
 ### Redis
 
