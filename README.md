@@ -1,6 +1,8 @@
 # rust-actix-rest-api-boilerplate
 A Rust RESTful API server with actix-web
 
+注: 新增mysql数据库版本的分支
+
 ## 安装
 - 安装[Rust](https://www.rust-lang.org/)
 - 安装[Docker](https://www.docker.com/) (可选)
