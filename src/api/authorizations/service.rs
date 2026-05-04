@@ -34,7 +34,9 @@ pub async fn add_black_list(auth_black_list: &AuthBlacklist, state: &web::Data<A
         hold.push(Box::pin(task2));
     }
 
-    join_all(hold).await;
+    for result in join_all(hold).await {
+        result?;
+    }
 
     Ok(())
 }
