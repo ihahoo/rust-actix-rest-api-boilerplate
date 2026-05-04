@@ -91,7 +91,6 @@ pub async fn insert(user: &User, db: &sqlx::Pool<sqlx::MySql>, log: &slog::Logge
         error!(log, "{}", e);
         return Err(error::err500());
     }
-    
     // 查询刚插入的记录
     let r = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = ?")
         .bind(last_id.unwrap())
