@@ -19,7 +19,10 @@ pub async fn add_black_list(auth_black_list: &AuthBlacklist, state: &web::Data<A
     let task1 = model::insert_auth_black_list(&auth_black_list, &state.db, &state.log);
     let mut hold: Vec<BoxFuture<_>> = vec![Box::pin(task1)];
 
-    let diff = (auth_black_list.access_token_exp.time() - Utc::now().time()).num_seconds();
+    let diff = auth_black_list
+        .access_token_exp
+        .signed_duration_since(Utc::now())
+        .num_seconds();
     if diff > 0 {
         let task2 = lib::redis::set_with_expire(
             format!("auth_black_list_{}", auth_black_list.access_token_id),
