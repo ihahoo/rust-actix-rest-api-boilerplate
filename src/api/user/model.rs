@@ -118,16 +118,16 @@ pub async fn insert(user: &User, db: &sqlx::Pool<sqlx::Postgres>, log: &slog::Lo
         q = q.bind(update_time);
     }
 
-    if let Some(is_enabled) = &user.is_enabled {
-        q = q.bind(is_enabled);
-    } else {
-        q = q.bind(1);
-    }
-
     if let Some(is_del) = &user.is_del {
         q = q.bind(is_del);
     } else {
         q = q.bind(0);
+    }
+
+    if let Some(is_enabled) = &user.is_enabled {
+        q = q.bind(is_enabled);
+    } else {
+        q = q.bind(1);
     }
 
     if let Some(user_type) = &user.user_type {
